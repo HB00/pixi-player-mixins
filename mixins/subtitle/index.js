@@ -18,13 +18,14 @@ const mixin = {
     const { conf } = this;
     let srtData;
     if (conf.src) {
-      srtData = await this.getRemoteData(src, false);
-    } else if (conf.innerHTML) {
-      srtData = conf.innerHTML.trim();
+      srtData = await this.getRemoteData(conf.src, false);
+    } else if (conf.srt) {
+      srtData = this.getConf('srt', false).split('\n').map(l => l.trim()).join('\n');
     }
     try {
       this.subs = parseSRT(srtData);
-      conf.duration = this.subs.at(-1).end;
+      // console.log(this.subs);
+      conf.duration = this.subs.at(-1)?.end || 0;
     } catch (e) {
       console.error(e);
     }
@@ -32,9 +33,19 @@ const mixin = {
       delete conf[k];
     }
     for (const [k, v] of Object.entries(DEFAULT_CONF)) {
-      if (conf[k] === undefined) conf[k] = this.getConf(k);
+      if (conf[k] === undefined) conf[k] = v;
     }
     return {...conf, textEditable: false, type: 'text'};
+  },
+
+  async updateView(senderId, changeAttr) {
+    if (changeAttr?.src || changeAttr?.srt) {
+      await this.initNode();
+      if (this.node) {
+        await this.node.preload();
+        await this.node.children[0].preload();
+      }
+    }
   },
 
   async render(nodeTime, playing, view) {

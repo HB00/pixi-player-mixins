@@ -45,6 +45,13 @@ const mixin = {
     outbox.remove(); // remove from doc
   },
 
+  async updateView(senderId, changeAttr) {
+    if (changeAttr?.src) {
+      this.destroyLottie();
+      await this.preload();
+    }
+  },
+
   async ready() {
     return new Promise((resolve) => {
       this.ani.addEventListener('DOMLoaded', (e) => {
@@ -79,11 +86,16 @@ const mixin = {
     view.update();
   },
 
-  destroy() {
+  destroyLottie() {
     this.canvas = null;
     this.box = null;
     if (this.ani) this.ani.destroy();
     this.ani = null;
+  },
+
+  destroy() {
+    this.destroyLottie();
+    super.destroy();
   },
 }
 
