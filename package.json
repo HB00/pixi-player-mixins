@@ -37,6 +37,7 @@
     "animejs": "^3.2.1",
     "echarts": "^5.4.0",
     "js-easing-functions": "^1.0.3",
+    "lottie-web": "^5.10.0",
     "md5": "^2.3.0",
     "parse-srt": "^1.0.0-alpha",
     "tinycolor2": "^1.4.2"

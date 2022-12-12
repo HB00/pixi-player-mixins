@@ -1,10 +1,9 @@
-// import lottie from 'lottie-web';
-
-import lottie from 'lottie-nodejs';
-lottie.setCanvas({Image});
+import lottie from 'lottie-web';
 
 const DEFAULT_CONF = {
-  width: '100vw', height: '100vh', 'object-fit': 'contain',
+  width: '100vw', height: '100vh', 
+  'object-fit': 'contain', loop: true,
+  duration: 'contain'
 };
 
 const mixin = {
@@ -18,22 +17,40 @@ const mixin = {
     const animationData = await this.getRemoteData(src);
     let { w, h, nm, fr, ip, op } = animationData;
 
-    // resize canvas
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = w;
-    this.canvas.height = h;
+    const outbox = document.createElement('div');
+    outbox.style.width = '0px';
+    outbox.style.height = '0px';
+    outbox.style.overflow = 'hidden';
+    document.body.append(outbox); // must add to doc!
+
+    // canvas will be same size as container
+    const container = document.createElement('div');
+    container.style.width = `${w}px`;
+    container.style.height = `${h}px`;
+    outbox.append(container);
 
     this.name = nm;
     this.frames = op - ip;
-    this.conf.duration = this.length = this.frames / fr;
+    this.length = this.frames / fr;
     this.ani = lottie.loadAnimation({
-      container: this.canvas, 
+      container,
       animationData,
       autoplay: false,
       renderer: 'canvas',
     });
+    await this.ready();
 
-    // document.body.append(this.canvas);
+    this.canvas = container.childNodes[0];
+    this.box = outbox;
+    outbox.remove(); // remove from doc
+  },
+
+  async ready() {
+    return new Promise((resolve) => {
+      this.ani.addEventListener('DOMLoaded', (e) => {
+        resolve()
+      }, { once: true });
+    });
   },
 
   async render(nodeTime, playing, view) {
@@ -44,7 +61,9 @@ const mixin = {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!nodeTime) nodeTime = 0.001;
-    this.ani.goToAndStop(nodeTime * 1000, false); // isFrame = false (use time)
+    const len = this.material.length;
+    const matTime = this.getConf('loop', false) ? nodeTime % len : Math.min(nodeTime, len);
+    this.ani.goToAndStop(matTime * 1000, false); // isFrame = false (use time)
 
     const fit = this.getConf('object-fit', false);
     let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height;
@@ -60,6 +79,12 @@ const mixin = {
     view.update();
   },
 
+  destroy() {
+    this.canvas = null;
+    this.box = null;
+    if (this.ani) this.ani.destroy();
+    this.ani = null;
+  },
 }
 
 if (window["pixi-player"].regMixin) {
