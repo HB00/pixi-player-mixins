@@ -48,6 +48,15 @@ const mixin = {
     }
   },
 
+  nodeUpdated() {
+    this.node.on('updated', (e) => {
+      // 当修改text属性的时候，同步回mixin的conf里
+      for (const [k, v] of Object.entries(e.changed)) {
+        this.setConf(k, v.to);
+      }
+    });
+  },
+
   async render(nodeTime, playing, view) {
     if (!this.node || this.node.type !== 'text') return;
     if (!this.current || this.current.start < nodeTime || this.current.end > nodeTime) {

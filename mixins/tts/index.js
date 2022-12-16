@@ -12,16 +12,16 @@ const mixin = {
   },
 
   async createNode() {
-    const { conf } = this;
-    let title = this.getConf('title', false);
+    const conf = JSON.parse(JSON.stringify(this.conf)); // deep copy
     let content = this.getConf('content', false);
     let voice = this.getConf('voice', false);
     let language = this.getConf('language', false);
     let speed = this.getConf('speed', false);
-    if (!content && title) {
-      content = await this.getContent(title);
-      this.conf.content = content;
-    }
+    // let title = this.getConf('title', false);
+    // if (!content && title) {
+    //   content = await this.getContent(title);
+    //   conf.content = content;
+    // }
     if (!content) return null;
     const { lines, duration, src } = await this.getTTS(content, voice, language, speed);
     // console.log('createNode', {lines, duration, src});
@@ -39,6 +39,15 @@ const mixin = {
       type: 'audio', src, duration,
     }];
     return {...conf, textEditable: false, type: 'text', duration, children};
+  },
+
+  nodeUpdated() {
+    this.node.on('updated', (e) => {
+      // 当修改text属性的时候，同步回mixin的conf里
+      for (const [k, v] of Object.entries(e.changed)) {
+        this.setConf(k, v.to);
+      }
+    });
   },
 
   async updateView(senderId, changeAttr) {
@@ -114,19 +123,19 @@ const mixin = {
     return {};
   },
 
-  async getContent(title) {
-    const res = await fetch('http://localhost:8016/cnt', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({title})
-    });
-    const json = await res.json();
-    console.log(json);
-    return json.code === 200 ? json.content : '';
-  }
+  // async getContent(title) {
+  //   const res = await fetch('http://localhost:8016/cnt', {
+  //     method: 'POST',
+  //     headers: {
+  //       'Accept': 'application/json',
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify({title})
+  //   });
+  //   const json = await res.json();
+  //   console.log(json);
+  //   return json.code === 200 ? json.content : '';
+  // }
 };
 
 if (window["pixi-player"].regMixin) {
